@@ -1,23 +1,71 @@
 * { box-sizing: border-box; }
 
+:root {
+  --page-bg: #111;
+  --text: #eee;
+  --muted: #888;
+  --board-bg: #000;
+  --grid: #1a1a1a;
+  --border: #444;
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  --kbd-bg: #222;
+  --kbd-border: #555;
+  --cell-outline: rgba(0, 0, 0, 0.5);
+  --flash-a: #fff;
+  --flash-b: #ccc;
+}
+
+[data-theme="light"] {
+  --page-bg: #f2f2f2;
+  --text: #222;
+  --muted: #666;
+  --board-bg: #fff;
+  --grid: #e6e6e6;
+  --border: #bbb;
+  --overlay-bg: rgba(255, 255, 255, 0.8);
+  --kbd-bg: #fff;
+  --kbd-border: #bbb;
+  --cell-outline: rgba(0, 0, 0, 0.25);
+  --flash-a: #222;
+  --flash-b: #555;
+}
+
 body {
   margin: 0;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #111;
-  color: #eee;
+  background: var(--page-bg);
+  color: var(--text);
   font-family: system-ui, sans-serif;
 }
 
-h1 { margin: 20px 0 12px; letter-spacing: 4px; }
+header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0 12px;
+}
+
+h1 { margin: 0; letter-spacing: 4px; }
+
+#theme-toggle {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--kbd-bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
 
 h2 {
   margin: 0 0 4px;
   font-size: 13px;
   text-transform: uppercase;
-  color: #888;
+  color: var(--muted);
 }
 
 .game { display: flex; gap: 20px; }
@@ -26,8 +74,8 @@ h2 {
 
 #board {
   display: block;
-  background: #000;
-  border: 2px solid #444;
+  background: var(--board-bg);
+  border: 2px solid var(--border);
 }
 
 .overlay {
@@ -36,7 +84,7 @@ h2 {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--overlay-bg);
   font-size: 20px;
   text-align: center;
 }
@@ -49,14 +97,14 @@ h2 {
 
 .panel p { margin: 0 0 12px; font-size: 22px; font-weight: bold; }
 
-#next { background: #000; border: 2px solid #444; }
+#next { background: var(--board-bg); border: 2px solid var(--border); }
 
 .controls ul { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.9; }
 
 kbd {
   padding: 1px 5px;
-  border: 1px solid #555;
+  border: 1px solid var(--kbd-border);
   border-radius: 3px;
-  background: #222;
+  background: var(--kbd-bg);
   font-family: inherit;
 }

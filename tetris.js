@@ -37,6 +37,7 @@ const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
 const overlay = document.getElementById('overlay');
 const overlayText = document.getElementById('overlay-text');
+const themeToggle = document.getElementById('theme-toggle');
 
 let board;
 let current;
@@ -50,6 +51,7 @@ let lastTime;
 let state = 'idle';
 let clearing = null;
 let particles = [];
+let theme = {};
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -222,9 +224,9 @@ function drawClearingRows() {
   const left = (COLS * BLOCK - width) / 2;
   clearing.rows.forEach((y) => {
     ctx.globalAlpha = 1;
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = theme.boardBg;
     ctx.fillRect(0, y * BLOCK, COLS * BLOCK, BLOCK);
-    ctx.fillStyle = flash ? '#fff' : '#ccc';
+    ctx.fillStyle = flash ? theme.flashA : theme.flashB;
     ctx.globalAlpha = 1 - progress * 0.5;
     ctx.fillRect(left, y * BLOCK, width, BLOCK);
   });
@@ -250,7 +252,7 @@ function updateStats() {
 function drawCell(context, x, y, size, color) {
   context.fillStyle = color;
   context.fillRect(x * size, y * size, size, size);
-  context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+  context.strokeStyle = theme.cellOutline;
   context.lineWidth = 2;
   context.strokeRect(x * size + 1, y * size + 1, size - 2, size - 2);
 }
@@ -262,10 +264,10 @@ function ghostY() {
 }
 
 function draw() {
-  ctx.fillStyle = '#000';
+  ctx.fillStyle = theme.boardBg;
   ctx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
 
-  ctx.strokeStyle = '#1a1a1a';
+  ctx.strokeStyle = theme.grid;
   ctx.lineWidth = 1;
   for (let x = 1; x < COLS; x++) {
     ctx.beginPath();
@@ -310,7 +312,7 @@ function draw() {
 }
 
 function drawNext() {
-  nextCtx.fillStyle = '#000';
+  nextCtx.fillStyle = theme.boardBg;
   nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
   if (!next) return;
   const m = next.matrix;
@@ -430,5 +432,29 @@ document.addEventListener('keydown', (e) => {
   draw();
 });
 
+function loadTheme() {
+  const css = getComputedStyle(document.documentElement);
+  const read = (name) => css.getPropertyValue(name).trim();
+  theme = {
+    boardBg: read('--board-bg'),
+    grid: read('--grid'),
+    cellOutline: read('--cell-outline'),
+    flashA: read('--flash-a'),
+    flashB: read('--flash-b'),
+  };
+  const isDark = document.documentElement.dataset.theme === 'dark';
+  themeToggle.textContent = isDark ? 'Light mode' : 'Dark mode';
+}
+
+themeToggle.addEventListener('click', () => {
+  const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  localStorage.setItem('theme', next);
+  loadTheme();
+  draw();
+  themeToggle.blur();
+});
+
+loadTheme();
 board = createBoard();
 draw();

@@ -5,9 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tetris</title>
   <link rel="stylesheet" href="style.css">
+  <script>
+    document.documentElement.dataset.theme = localStorage.getItem('theme')
+      || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  </script>
 </head>
 <body>
-  <h1>Tetris</h1>
+  <header>
+    <h1>Tetris</h1>
+    <button id="theme-toggle" type="button" aria-label="Toggle light and dark mode"></button>
+  </header>
   <div class="game">
     <div class="board-wrap">
       <canvas id="board" width="300" height="600"></canvas>
