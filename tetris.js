@@ -134,13 +134,17 @@ function softDrop() {
   dropCounter = 0;
 }
 
-function hardDrop() {
-  let distance = 0;
-  while (!collides(current, 0, 1)) {
-    current.y++;
-    distance++;
+function fallThroughY() {
+  for (let y = ROWS; y > current.y; y--) {
+    if (!collides(current, 0, y - current.y)) return y;
   }
-  score += distance * 2;
+  return current.y;
+}
+
+function hardDrop() {
+  const landingY = fallThroughY();
+  score += (landingY - current.y) * 2;
+  current.y = landingY;
   lockPiece();
   dropCounter = 0;
 }
@@ -324,11 +328,6 @@ function drawCell(context, x, y, size, color) {
   context.strokeRect(x * size + 1, y * size + 1, size - 2, size - 2);
 }
 
-function ghostY() {
-  let offset = 0;
-  while (!collides(current, 0, offset + 1)) offset++;
-  return current.y + offset;
-}
 
 function draw() {
   ctx.fillStyle = theme.boardBg;
@@ -358,7 +357,7 @@ function draw() {
   });
 
   if (current && state !== 'over') {
-    const gy = ghostY();
+    const gy = fallThroughY();
     ctx.globalAlpha = 0.2;
     current.matrix.forEach((row, y) => {
       row.forEach((cell, x) => {

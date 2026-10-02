@@ -13,6 +13,6 @@ Open `index.html` in a browser, or visit the GitHub Pages deployment.
 | Left / Right | Move |
 | Up | Rotate |
 | Down | Soft drop |
-| Space | Hard drop |
+| Space | Fall through: drop to the lowest spot the piece fits, passing through blocks |
 | P | Pause |
 | Enter | Start / Restart |
