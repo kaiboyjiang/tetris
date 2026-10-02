@@ -29,6 +29,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  padding-bottom: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -59,12 +60,12 @@ h1 { margin: 0; letter-spacing: 4px; }
 
 h2 {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: calc(13px * var(--scale, 1));
   text-transform: uppercase;
   color: var(--muted);
 }
 
-.game { display: flex; gap: 20px; }
+.game { display: flex; gap: calc(20px * var(--scale, 1)); }
 
 .board-wrap { position: relative; }
 
@@ -81,21 +82,25 @@ h2 {
   align-items: center;
   justify-content: center;
   background: var(--overlay-bg);
-  font-size: 20px;
+  font-size: calc(20px * var(--scale, 1));
   text-align: center;
 }
 
 .overlay.hidden { display: none; }
 
-.panel { width: 160px; }
+.panel { width: calc(160px * var(--scale, 1)); }
 
-.panel section { margin-bottom: 20px; }
+.panel section { margin-bottom: calc(20px * var(--scale, 1)); }
 
-.panel p { margin: 0 0 12px; font-size: 22px; font-weight: bold; }
+.panel p {
+  margin: 0 0 calc(12px * var(--scale, 1));
+  font-size: calc(22px * var(--scale, 1));
+  font-weight: bold;
+}
 
 #next { background: var(--board-bg); border: 2px solid var(--border); }
 
-.controls ul { list-style: none; padding: 0; margin: 0; font-size: 13px; line-height: 1.9; }
+.controls ul { list-style: none; padding: 0; margin: 0; font-size: calc(13px * var(--scale, 1)); line-height: 1.9; }
 
 kbd {
   padding: 1px 5px;

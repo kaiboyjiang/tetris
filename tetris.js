@@ -2,6 +2,15 @@ const COLS = 10;
 const ROWS = 20;
 const BLOCK = 30;
 const NEXT_BLOCK = 24;
+const BOARD_WIDTH = COLS * BLOCK;
+const BOARD_HEIGHT = ROWS * BLOCK;
+const NEXT_SIZE = 120;
+const MIN_SCALE = 0.35;
+const PAGE_BOTTOM_PADDING = 16;
+const BOARD_BORDER = 4;
+const PANEL_WIDTH = 160;
+const PANEL_GAP = 20;
+const PAGE_SIDE_PADDING = 16;
 
 const COLORS = {
   I: '#5fb8b8',
@@ -54,6 +63,8 @@ let state = 'idle';
 let clearing = null;
 let particles = [];
 let theme = {};
+let scale = 1;
+let pixelScale = 1;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -321,7 +332,8 @@ function ghostY() {
 
 function draw() {
   ctx.fillStyle = theme.boardBg;
-  ctx.fillRect(0, 0, boardCanvas.width, boardCanvas.height);
+  ctx.setTransform(pixelScale, 0, 0, pixelScale, 0, 0);
+  ctx.fillRect(0, 0, BOARD_WIDTH, BOARD_HEIGHT);
 
   ctx.strokeStyle = theme.grid;
   ctx.lineWidth = 1;
@@ -371,13 +383,14 @@ function draw() {
 
 function drawNext() {
   nextCtx.fillStyle = theme.boardBg;
-  nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+  nextCtx.setTransform(pixelScale, 0, 0, pixelScale, 0, 0);
+  nextCtx.fillRect(0, 0, NEXT_SIZE, NEXT_SIZE);
   if (!next) return;
   const m = next.matrix;
   const rows = m.filter((row) => row.some(Boolean));
   const firstRow = m.findIndex((row) => row.some(Boolean));
-  const offsetX = (nextCanvas.width / NEXT_BLOCK - m[0].length) / 2;
-  const offsetY = (nextCanvas.height / NEXT_BLOCK - rows.length) / 2 - firstRow;
+  const offsetX = (NEXT_SIZE / NEXT_BLOCK - m[0].length) / 2;
+  const offsetY = (NEXT_SIZE / NEXT_BLOCK - rows.length) / 2 - firstRow;
   m.forEach((row, y) => {
     row.forEach((cell, x) => {
       if (cell) drawCell(nextCtx, x + offsetX, y + offsetY, NEXT_BLOCK, COLORS[next.type]);
@@ -511,6 +524,30 @@ themeToggle.addEventListener('click', () => {
   themeToggle.blur();
 });
 
+function sizeCanvas(canvas, width, height) {
+  canvas.style.width = `${width * scale}px`;
+  canvas.style.height = `${height * scale}px`;
+  canvas.width = Math.round(width * pixelScale);
+  canvas.height = Math.round(height * pixelScale);
+}
+
+function fitToWindow() {
+  const headerBottom = document.querySelector('header').getBoundingClientRect().bottom;
+  const headerMargin = parseFloat(getComputedStyle(document.querySelector('header')).marginBottom);
+  const available = window.innerHeight - headerBottom - headerMargin - PAGE_BOTTOM_PADDING - BOARD_BORDER;
+  const availableWidth = window.innerWidth - PAGE_SIDE_PADDING - BOARD_BORDER;
+  const fitHeight = Math.floor(available) / BOARD_HEIGHT;
+  const fitWidth = Math.floor(availableWidth) / (BOARD_WIDTH + PANEL_GAP + PANEL_WIDTH);
+  scale = Math.max(MIN_SCALE, Math.min(fitHeight, fitWidth));
+  pixelScale = scale * (window.devicePixelRatio || 1);
+  document.documentElement.style.setProperty('--scale', scale);
+  sizeCanvas(boardCanvas, BOARD_WIDTH, BOARD_HEIGHT);
+  sizeCanvas(nextCanvas, NEXT_SIZE, NEXT_SIZE);
+  draw();
+}
+
+window.addEventListener('resize', fitToWindow);
+
 loadTheme();
 board = createBoard();
-draw();
+fitToWindow();
