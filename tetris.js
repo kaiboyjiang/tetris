@@ -4,13 +4,13 @@ const BLOCK = 30;
 const NEXT_BLOCK = 24;
 
 const COLORS = {
-  I: '#00f0f0',
-  O: '#f0f000',
-  T: '#a000f0',
-  S: '#00f000',
-  Z: '#f00000',
-  J: '#0000f0',
-  L: '#f0a000',
+  I: '#5fb8b8',
+  O: '#c9c35a',
+  T: '#8f62b5',
+  S: '#6bb26b',
+  Z: '#c06060',
+  J: '#5c6bb8',
+  L: '#c9944f',
 };
 
 const SHAPES = {
@@ -26,7 +26,7 @@ const SHAPES = {
 const LINE_SCORES = [0, 100, 300, 500, 800];
 const CLEAR_DURATION = 450;
 const SPARKS_PER_CELL = 6;
-const SPARK_COLORS = ['#ffe066', '#ff9f1a', '#ff5a1f', null];
+const SPARK_COLORS = ['#e0cf8a', '#d9a25c', '#c97a5a', null];
 const PARTICLE_GRAVITY = 0.0015;
 const SHAKE_PER_ROW = 2.5;
 
@@ -262,14 +262,14 @@ function drawBlast() {
     const cy = (y + 0.5) * BLOCK;
     const radius = BLOCK + progress * COLS * BLOCK * 0.75;
     const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
-    glow.addColorStop(0, `rgba(255, 245, 210, ${0.9 * fade})`);
-    glow.addColorStop(0.35, `rgba(255, 170, 40, ${0.6 * fade})`);
-    glow.addColorStop(1, 'rgba(255, 80, 0, 0)');
+    glow.addColorStop(0, `rgba(240, 232, 210, ${0.9 * fade})`);
+    glow.addColorStop(0.35, `rgba(220, 165, 90, ${0.6 * fade})`);
+    glow.addColorStop(1, 'rgba(200, 110, 60, 0)');
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
-    ctx.strokeStyle = `rgba(255, 200, 80, ${fade})`;
+    ctx.strokeStyle = `rgba(225, 195, 130, ${fade})`;
     ctx.lineWidth = 3 * fade + 1;
     ctx.beginPath();
     ctx.arc(cx, cy, radius * 0.9, 0, Math.PI * 2);
