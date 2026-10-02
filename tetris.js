@@ -24,9 +24,11 @@ const SHAPES = {
 };
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
-const CLEAR_DURATION = 400;
-const PARTICLES_PER_CELL = 4;
+const CLEAR_DURATION = 450;
+const SPARKS_PER_CELL = 6;
+const SPARK_COLORS = ['#ffe066', '#ff9f1a', '#ff5a1f', null];
 const PARTICLE_GRAVITY = 0.0015;
+const SHAKE_PER_ROW = 2.5;
 
 const boardCanvas = document.getElementById('board');
 const ctx = boardCanvas.getContext('2d');
@@ -164,7 +166,7 @@ function clearLines() {
   current = null;
   clearing = { rows, start: performance.now() };
   rows.forEach((y) => {
-    board[y].forEach((type, x) => spawnParticles(x, y, COLORS[type]));
+    board[y].forEach((type, x) => spawnExplosion(x, y, COLORS[type]));
   });
 }
 
@@ -180,20 +182,38 @@ function finishClear() {
   spawn();
 }
 
-function spawnParticles(cellX, cellY, color) {
-  for (let i = 0; i < PARTICLES_PER_CELL; i++) {
+function spawnExplosion(cellX, cellY, color) {
+  const cx = (cellX + 0.5) * BLOCK;
+  const cy = (cellY + 0.5) * BLOCK;
+  const push = (cellX - (COLS - 1) / 2) / COLS;
+  const debrisLife = 700 + Math.random() * 500;
+  particles.push({
+    kind: 'debris',
+    x: cx,
+    y: cy,
+    vx: push * 0.8 + (Math.random() - 0.5) * 0.3,
+    vy: -0.35 - Math.random() * 0.35,
+    angle: 0,
+    spin: (Math.random() - 0.5) * 0.03,
+    size: BLOCK,
+    life: debrisLife,
+    maxLife: debrisLife,
+    color,
+  });
+  for (let i = 0; i < SPARKS_PER_CELL; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = 0.05 + Math.random() * 0.25;
-    const life = 500 + Math.random() * 500;
+    const speed = 0.15 + Math.random() * 0.5;
+    const life = 300 + Math.random() * 450;
     particles.push({
-      x: (cellX + Math.random()) * BLOCK,
-      y: (cellY + Math.random()) * BLOCK,
+      kind: 'spark',
+      x: cx,
+      y: cy,
       vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 0.2,
-      size: 3 + Math.random() * 4,
+      vy: Math.sin(angle) * speed - 0.1,
+      size: 2 + Math.random() * 3,
       life,
       maxLife: life,
-      color,
+      color: SPARK_COLORS[Math.floor(Math.random() * SPARK_COLORS.length)] || color,
     });
   }
 }
@@ -204,33 +224,69 @@ function updateParticles(delta) {
     p.x += p.vx * delta;
     p.y += p.vy * delta;
     p.life -= delta;
+    if (p.kind === 'debris') p.angle += p.spin * delta;
   });
   particles = particles.filter((p) => p.life > 0);
 }
 
 function drawParticles() {
   particles.forEach((p) => {
-    ctx.globalAlpha = p.life / p.maxLife;
-    ctx.fillStyle = p.color;
-    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+    const t = p.life / p.maxLife;
+    ctx.globalAlpha = Math.min(1, t * 1.5);
+    if (p.kind === 'debris') {
+      const size = p.size * (0.3 + 0.7 * t);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.angle);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-size / 2, -size / 2, size, size);
+      ctx.strokeStyle = theme.cellOutline;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-size / 2 + 1, -size / 2 + 1, size - 2, size - 2);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size * (0.5 + 0.5 * t), 0, Math.PI * 2);
+      ctx.fill();
+    }
   });
   ctx.globalAlpha = 1;
 }
 
-function drawClearingRows() {
+function drawBlast() {
   const progress = Math.min(1, (performance.now() - clearing.start) / CLEAR_DURATION);
-  const flash = Math.floor(progress * 6) % 2 === 0;
-  const width = COLS * BLOCK * (1 - progress);
-  const left = (COLS * BLOCK - width) / 2;
+  const fade = 1 - progress;
+  const cx = (COLS * BLOCK) / 2;
   clearing.rows.forEach((y) => {
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = theme.boardBg;
-    ctx.fillRect(0, y * BLOCK, COLS * BLOCK, BLOCK);
-    ctx.fillStyle = flash ? theme.flashA : theme.flashB;
-    ctx.globalAlpha = 1 - progress * 0.5;
-    ctx.fillRect(left, y * BLOCK, width, BLOCK);
+    const cy = (y + 0.5) * BLOCK;
+    const radius = BLOCK + progress * COLS * BLOCK * 0.75;
+    const glow = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    glow.addColorStop(0, `rgba(255, 245, 210, ${0.9 * fade})`);
+    glow.addColorStop(0.35, `rgba(255, 170, 40, ${0.6 * fade})`);
+    glow.addColorStop(1, 'rgba(255, 80, 0, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(255, 200, 80, ${fade})`;
+    ctx.lineWidth = 3 * fade + 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius * 0.9, 0, Math.PI * 2);
+    ctx.stroke();
   });
-  ctx.globalAlpha = 1;
+}
+
+function shakeBoard() {
+  if (!clearing) {
+    boardCanvas.style.transform = '';
+    return;
+  }
+  const fade = 1 - Math.min(1, (performance.now() - clearing.start) / CLEAR_DURATION);
+  const magnitude = SHAKE_PER_ROW * clearing.rows.length * fade;
+  const dx = (Math.random() - 0.5) * 2 * magnitude;
+  const dy = (Math.random() - 0.5) * 2 * magnitude;
+  boardCanvas.style.transform = `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)`;
 }
 
 function spawn() {
@@ -283,6 +339,7 @@ function draw() {
   }
 
   board.forEach((row, y) => {
+    if (clearing && clearing.rows.includes(y)) return;
     row.forEach((type, x) => {
       if (type) drawCell(ctx, x, y, BLOCK, COLORS[type]);
     });
@@ -306,8 +363,9 @@ function draw() {
     });
   }
 
-  if (clearing) drawClearingRows();
+  if (clearing) drawBlast();
   drawParticles();
+  shakeBoard();
   drawNext();
 }
 
@@ -439,8 +497,6 @@ function loadTheme() {
     boardBg: read('--board-bg'),
     grid: read('--grid'),
     cellOutline: read('--cell-outline'),
-    flashA: read('--flash-a'),
-    flashB: read('--flash-b'),
   };
   const isDark = document.documentElement.dataset.theme === 'dark';
   themeToggle.textContent = isDark ? 'Light mode' : 'Dark mode';

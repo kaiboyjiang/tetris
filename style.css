@@ -11,8 +11,6 @@
   --kbd-bg: #222;
   --kbd-border: #555;
   --cell-outline: rgba(0, 0, 0, 0.5);
-  --flash-a: #fff;
-  --flash-b: #ccc;
 }
 
 [data-theme="light"] {
@@ -26,8 +24,6 @@
   --kbd-bg: #fff;
   --kbd-border: #bbb;
   --cell-outline: rgba(0, 0, 0, 0.25);
-  --flash-a: #222;
-  --flash-b: #555;
 }
 
 body {
