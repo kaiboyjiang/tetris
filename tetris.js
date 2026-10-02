@@ -24,6 +24,9 @@ const SHAPES = {
 };
 
 const LINE_SCORES = [0, 100, 300, 500, 800];
+const CLEAR_DURATION = 400;
+const PARTICLES_PER_CELL = 4;
+const PARTICLE_GRAVITY = 0.0015;
 
 const boardCanvas = document.getElementById('board');
 const ctx = boardCanvas.getContext('2d');
@@ -45,6 +48,8 @@ let level;
 let dropCounter;
 let lastTime;
 let state = 'idle';
+let clearing = null;
+let particles = [];
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(null));
@@ -143,25 +148,87 @@ function lockPiece() {
     return;
   }
   clearLines();
-  spawn();
 }
 
 function clearLines() {
-  let cleared = 0;
-  for (let y = ROWS - 1; y >= 0; y--) {
-    if (board[y].every((cell) => cell)) {
-      board.splice(y, 1);
-      board.unshift(Array(COLS).fill(null));
-      cleared++;
-      y++;
-    }
+  const rows = [];
+  board.forEach((row, y) => {
+    if (row.every((cell) => cell)) rows.push(y);
+  });
+  if (rows.length === 0) {
+    spawn();
+    return;
   }
-  if (cleared) {
-    score += LINE_SCORES[cleared] * level;
-    lines += cleared;
-    level = Math.floor(lines / 10) + 1;
-    updateStats();
+  current = null;
+  clearing = { rows, start: performance.now() };
+  rows.forEach((y) => {
+    board[y].forEach((type, x) => spawnParticles(x, y, COLORS[type]));
+  });
+}
+
+function finishClear() {
+  const { rows } = clearing;
+  clearing = null;
+  board = board.filter((_, y) => !rows.includes(y));
+  while (board.length < ROWS) board.unshift(Array(COLS).fill(null));
+  score += LINE_SCORES[rows.length] * level;
+  lines += rows.length;
+  level = Math.floor(lines / 10) + 1;
+  updateStats();
+  spawn();
+}
+
+function spawnParticles(cellX, cellY, color) {
+  for (let i = 0; i < PARTICLES_PER_CELL; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 0.05 + Math.random() * 0.25;
+    const life = 500 + Math.random() * 500;
+    particles.push({
+      x: (cellX + Math.random()) * BLOCK,
+      y: (cellY + Math.random()) * BLOCK,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 0.2,
+      size: 3 + Math.random() * 4,
+      life,
+      maxLife: life,
+      color,
+    });
   }
+}
+
+function updateParticles(delta) {
+  particles.forEach((p) => {
+    p.vy += PARTICLE_GRAVITY * delta;
+    p.x += p.vx * delta;
+    p.y += p.vy * delta;
+    p.life -= delta;
+  });
+  particles = particles.filter((p) => p.life > 0);
+}
+
+function drawParticles() {
+  particles.forEach((p) => {
+    ctx.globalAlpha = p.life / p.maxLife;
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  });
+  ctx.globalAlpha = 1;
+}
+
+function drawClearingRows() {
+  const progress = Math.min(1, (performance.now() - clearing.start) / CLEAR_DURATION);
+  const flash = Math.floor(progress * 6) % 2 === 0;
+  const width = COLS * BLOCK * (1 - progress);
+  const left = (COLS * BLOCK - width) / 2;
+  clearing.rows.forEach((y) => {
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, y * BLOCK, COLS * BLOCK, BLOCK);
+    ctx.fillStyle = flash ? '#fff' : '#ccc';
+    ctx.globalAlpha = 1 - progress * 0.5;
+    ctx.fillRect(left, y * BLOCK, width, BLOCK);
+  });
+  ctx.globalAlpha = 1;
 }
 
 function spawn() {
@@ -237,6 +304,8 @@ function draw() {
     });
   }
 
+  if (clearing) drawClearingRows();
+  drawParticles();
   drawNext();
 }
 
@@ -268,6 +337,8 @@ function hideOverlay() {
 function start() {
   board = createBoard();
   bag = [];
+  clearing = null;
+  particles = [];
   score = 0;
   lines = 0;
   level = 1;
@@ -305,6 +376,13 @@ function update(time) {
   }
   const delta = time - lastTime;
   lastTime = time;
+  updateParticles(delta);
+  if (clearing) {
+    if (time - clearing.start >= CLEAR_DURATION) finishClear();
+    draw();
+    requestAnimationFrame(update);
+    return;
+  }
   dropCounter += delta;
   if (dropCounter > dropInterval()) {
     if (!collides(current, 0, 1)) {
@@ -323,6 +401,7 @@ document.addEventListener('keydown', (e) => {
     start();
     return;
   }
+  if (clearing) return;
   if (e.key === 'p' || e.key === 'P') {
     togglePause();
     return;
